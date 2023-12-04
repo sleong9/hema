@@ -217,7 +217,8 @@ def self_assessment():
 
     # Process and display the results
     if st.button("Submit"):
-        st.write(f"**Weather Condition at {location}**")
+       # st.write(f"**Weather Condition at {location}**")
+        st.markdown(f"<u>**Weather Condition at {location}**</u>", unsafe_allow_html=True)
         # Get the current date and time in the desired format
         current_time = datetime.now()
         formatted_time = current_time.strftime("%Y-%m-%d")
@@ -225,47 +226,50 @@ def self_assessment():
         input_date = current_time.strftime("%Y-%m-%d, %H:%M:%S")
         timestamp, latest_temperature_air = get_air_temperature_for_location(location, formatted_time)
         timestamp2, latest_humidity = get_humiditiy_for_location(location, formatted_time)
-        st.write(f"Air temperature:  {latest_temperature_air} °C")
-        st.write(f"Relative Humidity: {latest_humidity} %")
-        st.write(f"Time: {timestamp}")
+        st.write(f"**Air temperature:**  {latest_temperature_air} °C")
+        st.write(f"**Relative Humidity:** {latest_humidity} %")
+        st.write(f"**Date Time:** {timestamp}")
 
         calculated_WBGT = calculate_WBGT(latest_temperature_air, latest_humidity)
-        st.write(f'WBGT Reading: {calculated_WBGT:.2f} ')
+        st.write(f'**WBGT Reading:** {calculated_WBGT:.2f} ')
 
-        st.write(f"**Self-Assessment Results:**")
+        st.write(f' ')
+        st.markdown("<u>**Self-Assessment Results:**</u>", unsafe_allow_html=True)
 
-        st.write(f"Rest Minutes: {rest_minutes} Minutes")
-        st.write(f"Work Minutes: {work_minutes} Minutes")
-        st.write(f"Activity Level: {activity_taken}")
-        st.write(f"Urine Color: {urine_color}")
-        st.write(f"Uniform Type: {uniform_type}")
-        st.write(f"Work Ratio: {work_ratio}")
+        st.write(f"**Rest Minutes:** {rest_minutes} Minutes")
+        st.write(f"**Work Minutes:** {work_minutes} Minutes")
+        st.write(f"**Activity Level:** {activity_taken}")
+        st.write(f"**Urine Color:** {urine_color}")
+        st.write(f"**Uniform Type:** {uniform_type}")
+        st.write(f"**Work Ratio:** {work_ratio}")
 
         user_has_medication = has_medication(st.session_state.patient_id)
 
         if user_has_medication:
-            st.write("User has taken medication that affect their heat loss.")
+            st.write(f"**Consume any medication affecting heat loss:** Yes")
             medication = "Yes"
         else:
-            st.write("User has not taken medication that affect their heat loss.")
+            st.write(f"**Consume any medication affecting heat loss:** No")
             medication = "No"
 
         wbgt_value_risk = calculated_WBGT + classify_urine_risk(urine_color) + classify_uniform_risk(uniform_type)
-        st.write(f"WBGT Read: {wbgt_value_risk}")
+        #st.write(f"WBGT Read: {wbgt_value_risk}")
         heat_risk = classify_heat_risk(wbgt_value_risk)
-        st.write(f"WBGT Heat Color: {heat_risk}")
+        #st.write(f"WBGT Heat Color: {heat_risk}")
 
         user_inputted_ratio = work_ratio  # Replace with the user's input
 
         if classify_wbgt_min_excerise(wbgt_value_risk) > work_minutes:
-            st.write(f"Heat Risk: Low")
+            st.write(f"**Heat Risk:** Low")
         else:
             is_within_recommended_range = is_work_rest_ratio_within_recommended(activity_taken, wbgt_value_risk,
                                                                             user_inputted_ratio)
             if is_within_recommended_range:
-                st.write("The inputted work/rest ratio is within the recommended range.")
+                st.write(f"**Heat Risk:** Low")
+               # st.write("The inputted work/rest ratio is within the recommended range.")
             else:
-                st.write("The inputted work/rest ratio is not within the recommended range.")
+                st.write(f"**Heat Risk:** High")
+                #st.write("The inputted work/rest ratio is not within the recommended range.")
 
         # Save user data to SQLite
         save_user_data(user, rest_minutes, work_minutes, activity_taken, urine_color, location, uniform_type, medication, input_date)
@@ -275,14 +279,13 @@ def commander_dashboard():
     st.title("Commander Dashboard")
 
     current_time = datetime.now()
-    formatted_time = current_time.strftime("%Y-%m-%d")
+    formatted_time2 = current_time.strftime("%Y-%m-%d")
 
     camp_location = st.selectbox("Select Camp Location", ["Changi Camp", "Clementi Camp"])
-    timestamp, latest_temperature_air = get_air_temperature_for_location(camp_location,formatted_time)
-    timestamp2, latest_humidity = get_air_temperature_for_location(camp_location, formatted_time)
-    calculated_WBGT = calculate_WBGT(latest_temperature_air, latest_humidity)
-    WBGT_color = classify_heat_risk(calculated_WBGT)
-
+    timestamp, latest_temperature_air2 = get_air_temperature_for_location(camp_location, formatted_time2)
+    timestamp2, latest_humidity2 = get_humiditiy_for_location(camp_location, formatted_time2)
+    calculated_WBGT2 = calculate_WBGT(latest_temperature_air2, latest_humidity2)
+    WBGT_color = classify_heat_risk(calculated_WBGT2)
     cleansed_time = datetime.fromisoformat(timestamp).astimezone(timezone.utc)
 
     col1, col2, col3, col4 = st.columns(4)
@@ -323,15 +326,15 @@ def commander_dashboard():
             unsafe_allow_html=True,
         )
 
-        col1.metric(label="Air Temperature", value=f"{latest_temperature_air:.2f} °C")
-        col2.metric(label="WBGT Reading", value=f"{calculated_WBGT:.2f}", delta=f"({WBGT_color})")
+        col1.metric(label="Air Temperature", value=f"{latest_temperature_air2:.2f} °C")
+        col2.metric(label="WBGT Reading", value=f"{calculated_WBGT2:.2f}", delta=f"({WBGT_color})")
 
         data["Work Ratio"] = data['rest_minutes'] / data['work_minutes']
         data['Work Ratio'] = data['Work Ratio'].apply(lambda x: f"{x:.2f}")
 
-        data['calculated wbgt'] = calculated_WBGT + classify_uniform_risk(data['uniform']) + classify_urine_risk(data['urine'])
+        data['calculated wbgt'] = calculated_WBGT2 + classify_uniform_risk(data['uniform']) + classify_urine_risk(data['urine'])
 
-        data["Heat Risk"] = data.apply(lambda row: is_work_rest_ratio_within_recommended(row['activity'], calculated_WBGT, row['rest_minutes'] / row['work_minutes']), axis=1)
+        data["Heat Risk"] = data.apply(lambda row: is_work_rest_ratio_within_recommended(row['activity'], calculated_WBGT2, row['rest_minutes'] / row['work_minutes']), axis=1)
 
         data["Heat Risk"] = data["Heat Risk"].map({True: "Low", False: "High"})
 
